@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Conversation Study</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f7f4ef;
+      --surface:   #ffffff;
+      --border:    #e2ddd6;
+      --text:      #2c2825;
+      --muted:     #8a8178;
+      --accent:    #4a7c59;
+      --accent-lt: #eaf2ec;
+      --user-bg:   #4a7c59;
+      --user-text: #ffffff;
+      --ai-bg:     #ffffff;
+      --ai-text:   #2c2825;
+      --radius:    14px;
+      --shadow:    0 2px 16px rgba(0,0,0,0.07);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 40px;
+    }
+
+    /* subtle grain overlay */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0;
+    }
+
+    .container {
+      width: 100%; max-width: 680px;
+      position: relative; z-index: 1;
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+    header h1 {
+      font-family: 'Lora', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    header p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 6px;
+      font-weight: 300;
+    }
+
+    /* intro card shown before chat starts */
+    #intro-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 28px;
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    #intro-card h2 {
+      font-family: 'Lora', serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    #intro-card p {
+      font-size: 0.93rem;
+      line-height: 1.65;
+      color: #4a4540;
+    }
+    #intro-card .rounds-info {
+      background: var(--accent-lt);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 0.88rem;
+      color: var(--accent);
+      font-weight: 500;
+    }
+    #start-btn {
+      align-self: flex-start;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s, transform 0.1s;
+    }
+    #start-btn:hover { background: #3d6b4a; transform: translateY(-1px); }
+    #start-btn:active { transform: translateY(0); }
+
+    /* chat window */
+    #chat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #messages {
+      padding: 24px 20px;
+      display: flex; flex-direction: column; gap: 16px;
+      overflow-y: auto;
+      min-height: 300px;
+      max-height: 55vh;
+    }
+
+    .msg {
+      display: flex; flex-direction: column; gap: 4px;
+      animation: fadeUp 0.25s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user { align-items: flex-end; }
+    .msg.ai   { align-items: flex-start; }
+
+    .bubble {
+      max-width: 82%;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 0.93rem;
+      line-height: 1.6;
+    }
+    .msg.user .bubble {
+      background: var(--user-bg);
+      color: var(--user-text);
+      border-bottom-right-radius: 4px;
+    }
+    .msg.ai .bubble {
+      background: var(--ai-bg);
+      border: 1px solid var(--border);
+      color: var(--ai-text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .sender-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      padding: 0 4px;
+    }
+
+    /* typing indicator */
+    .typing-bubble {
+      display: flex; align-items: center; gap: 5px;
+      padding: 14px 18px;
+    }
+    .typing-bubble span {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* progress bar */
+    #progress-bar-wrap {
+      padding: 0 20px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    #progress-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    #progress-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0;
+    }
+
+    /* input area */
+    #input-area {
+      padding: 16px 20px;
+      display: flex; gap: 10px; align-items: flex-end;
+    }
+    #user-input {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.93rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      resize: none;
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      line-height: 1.5;
+      min-height: 44px;
+      max-height: 120px;
+    }
+    #user-input:focus { border-color: var(--accent); }
+    #user-input::placeholder { color: var(--muted); }
+
+    #send-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      width: 44px; height: 44px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.18s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    #send-btn:hover:not(:disabled) { background: #3d6b4a; transform: translateY(-1px); }
+    #send-btn:disabled { background: var(--border); cursor: not-allowed; }
+    #send-btn svg { width: 18px; height: 18px; }
+
+    /* completion card */
+    #done-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 36px 28px;
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    #done-card .checkmark {
+      width: 56px; height: 56px;
+      background: var(--accent-lt);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+    }
+    #done-card h2 {
+      font-family: 'Lora', serif;
+      font-size: 1.25rem;
+    }
+    #done-card p {
+      font-size: 0.92rem;
+      color: #4a4540;
+      line-height: 1.65;
+      max-width: 420px;
+    }
+    #completion-code {
+      background: var(--accent-lt);
+      border: 1.5px dashed var(--accent);
+      border-radius: 8px;
+      padding: 14px 28px;
+      font-family: monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+    }
+    #done-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 32px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.18s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    #done-btn:hover { background: #3d6b4a; }
+
+    /* error banner */
+    #error-banner {
+      display: none;
+      background: #fff0f0;
+      border: 1px solid #f5c6c6;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Research Conversation</h1>
+    <p>University Study — please read the instructions below before starting</p>
+  </header>
+
+  <!-- INTRO CARD -->
+  <div id="intro-card">
+    <h2 id="intro-title">Welcome</h2>
+    <p id="intro-text">Loading…</p>
+    <div class="rounds-info" id="rounds-info"></div>
+    <button id="start-btn" onclick="startChat()">Begin conversation →</button>
+  </div>
+
+  <!-- CHAT CARD -->
+  <div id="chat-card">
+    <div id="messages"></div>
+    <div id="progress-bar-wrap">
+      <div id="progress-label">Round 1 of 3</div>
+      <div id="progress-track"><div id="progress-fill"></div></div>
+    </div>
+    <div class="divider"></div>
+    <div id="error-banner" id="error-banner"></div>
+    <div id="input-area">
+      <textarea id="user-input" rows="1" placeholder="Type your response here…"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button id="send-btn" onclick="sendMessage()" title="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- DONE CARD -->
+  <div id="done-card">
+    <div class="checkmark">✓</div>
+    <h2>Conversation complete</h2>
+    <p>Thank you for taking part. Please copy the completion code below and return to the survey.</p>
+    <div id="completion-code"></div>
+    <a id="done-btn" href="#">Return to survey →</a>
+  </div>
+
+</div>
+
+<script>
+// ─── CONFIGURATION ────────────────────────────────────────────────────────────
+// Edit these values to customise the study.
+
+const CONFIG = {
+  // Number of conversation rounds before completion
+  totalRounds: 3,
+
+  // URL of your formr post-measures survey (participants are sent here at the end)
+  // The participant ID will be appended automatically as ?pid=XXX
+  returnUrl: "https://your-formr-survey-url-here.com",
+
+  // Text shown on the intro card per condition
+  intro: {
+    A: {
+      title: "A conversation about food choices",
+      text: "In this part of the study, you will have a short conversation with an AI assistant about eating fewer animal products. The AI will ask about your views and respond to your thoughts. There are no right or wrong answers — please share your honest opinions.",
+    },
+    B: {
+      title: "A conversation about community roles",
+      text: "In this part of the study, you will have a short conversation with an AI assistant about the role of firefighters in local communities. The AI will ask questions and respond to your thoughts. There are no right or wrong answers — please share your honest opinions.",
+    }
+  },
+
+  // System prompts sent to Claude (never visible to participants)
+  systemPrompts: {
+    A: `You are a friendly, empathetic conversation partner in a research study. Your goal is to have a genuine, tailored conversation with the participant about reducing consumption of animal products (meat, dairy, eggs, fish).
+
+Guidelines:
+- Begin by warmly greeting them and asking what their main reasons are for currently eating animal products.
+- In each reply, directly engage with the specific reasons or concerns THEY have mentioned. Do not give a generic speech.
+- Gently offer evidence-based counterpoints to their reasons, covering environmental impact, animal welfare, and health as relevant to what they bring up.
+- Be curious, not preachy. Ask follow-up questions. Acknowledge their points fairly before responding.
+- Use simple, clear language. Avoid jargon.
+- Keep each reply to 3–5 sentences maximum.
+- After ${CONFIG ? 3 : 3} rounds, end the conversation naturally and warmly.`,
+
+    B: `You are a friendly, curious conversation partner in a research study. Your goal is to have a pleasant, engaging conversation with the participant about the role of firefighters in their local community.
+
+Guidelines:
+- Begin by warmly greeting them and asking whether they have ever interacted with or thought much about their local fire service.
+- Ask follow-up questions based on what they share. Be genuinely interested.
+- Topics can include: community safety, the volunteer vs professional fire service, experiences with fire safety, appreciation for emergency services.
+- Keep each reply to 3–5 sentences maximum.
+- Do NOT mention food, diet, animal products, or health at any point.`
+  }
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let condition = "B";
+let participantId = "";
+let conversationHistory = [];
+let roundsCompleted = 0;
+let waitingForReply = false;
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  const params = new URLSearchParams(window.location.search);
+  condition = params.get("condition") === "A" ? "A" : "B";
+  participantId = params.get("pid") || "unknown_" + Math.random().toString(36).slice(2, 8);
+
+  const cfg = CONFIG.intro[condition];
+  document.getElementById("intro-title").textContent = cfg.title;
+  document.getElementById("intro-text").textContent = cfg.text;
+  document.getElementById("rounds-info").textContent =
+    `This conversation has ${CONFIG.totalRounds} rounds. After that, you will receive a completion code to return to the survey.`;
+}
+
+// ─── START ────────────────────────────────────────────────────────────────────
+async function startChat() {
+  document.getElementById("intro-card").style.display = "none";
+  const chatCard = document.getElementById("chat-card");
+  chatCard.style.display = "flex";
+  updateProgress();
+  await getAIReply(); // AI speaks first
+}
+
+// ─── SEND MESSAGE ─────────────────────────────────────────────────────────────
+async function sendMessage() {
+  if (waitingForReply) return;
+  const input = document.getElementById("user-input");
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = "";
+  autoResize(input);
+  appendMessage("user", text);
+  conversationHistory.push({ role: "user", content: text });
+
+  roundsCompleted++;
+  updateProgress();
+  await getAIReply();
+}
+
+// ─── GET AI REPLY ─────────────────────────────────────────────────────────────
+async function getAIReply() {
+  waitingForReply = true;
+  setSendEnabled(false);
+  const typingId = showTyping();
+
+  try {
+    const response = await fetch("/.netlify/functions/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        condition: condition,
+        history: conversationHistory,
+        systemPrompt: CONFIG.systemPrompts[condition]
+      })
+    });
+
+    if (!response.ok) throw new Error("Network error " + response.status);
+    const data = await response.json();
+    const aiText = data.content?.[0]?.text || "Sorry, I didn't get a response.";
+
+    removeTyping(typingId);
+    appendMessage("ai", aiText);
+    conversationHistory.push({ role: "assistant", content: aiText });
+
+    // Check if we've hit the round limit
+    if (roundsCompleted >= CONFIG.totalRounds) {
+      setTimeout(showCompletion, 1200);
+    } else {
+      setSendEnabled(true);
+      document.getElementById("user-input").focus();
+    }
+  } catch (err) {
+    removeTyping(typingId);
+    showError("Something went wrong. Please wait a moment and try again. (" + err.message + ")");
+    setSendEnabled(true);
+  }
+
+  waitingForReply = false;
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+function appendMessage(role, text) {
+  const messages = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+
+  const label = document.createElement("div");
+  label.className = "sender-label";
+  label.textContent = role === "user" ? "You" : "AI Assistant";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = text;
+
+  div.appendChild(label);
+  div.appendChild(bubble);
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showTyping() {
+  const messages = document.getElementById("messages");
+  const div = document.createElement("div");
+  div.className = "msg ai";
+  div.id = "typing-" + Date.now();
+
+  const label = document.createElement("div");
+  label.className = "sender-label";
+  label.textContent = "AI Assistant";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble typing-bubble";
+  bubble.innerHTML = "<span></span><span></span><span></span>";
+
+  div.appendChild(label);
+  div.appendChild(bubble);
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+  return div.id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function updateProgress() {
+  const pct = Math.min((roundsCompleted / CONFIG.totalRounds) * 100, 100);
+  document.getElementById("progress-fill").style.width = pct + "%";
+  const remaining = CONFIG.totalRounds - roundsCompleted;
+  document.getElementById("progress-label").textContent =
+    roundsCompleted === 0
+      ? `Round 1 of ${CONFIG.totalRounds}`
+      : remaining > 0
+        ? `Round ${roundsCompleted + 1} of ${CONFIG.totalRounds}`
+        : "Conversation complete";
+}
+
+function setSendEnabled(enabled) {
+  const btn = document.getElementById("send-btn");
+  const input = document.getElementById("user-input");
+  btn.disabled = !enabled;
+  input.disabled = !enabled;
+}
+
+function showError(msg) {
+  const banner = document.getElementById("error-banner");
+  banner.textContent = msg;
+  banner.style.display = "block";
+  setTimeout(() => banner.style.display = "none", 6000);
+}
+
+function showCompletion() {
+  document.getElementById("chat-card").style.display = "none";
+  const doneCard = document.getElementById("done-card");
+  doneCard.style.display = "flex";
+
+  // Generate a simple completion code: condition prefix + participant ID
+  const code = (condition === "A" ? "A" : "B") + "-" + participantId.toUpperCase();
+  document.getElementById("completion-code").textContent = code;
+
+  // Return button links back to formr with pid and condition
+  const returnUrl = CONFIG.returnUrl + "?pid=" + encodeURIComponent(participantId) + "&condition=" + condition;
+  document.getElementById("done-btn").href = returnUrl;
+}
+
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+
+// ─── RUN ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

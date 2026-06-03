@@ -1,0 +1,13 @@
+# netlify.toml
+# This file tells Netlify how to deploy your project.
+# You don't need to edit this file.
+
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
