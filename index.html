@@ -449,6 +449,8 @@ async function startChat() {
   const chatCard = document.getElementById("chat-card");
   chatCard.style.display = "flex";
   updateProgress();
+  // Seed conversation so Claude knows to open with a greeting
+  conversationHistory.push({ role: "user", content: "Hi, I am ready to begin." });
   await getAIReply(); // AI speaks first
 }
 
@@ -496,7 +498,7 @@ async function getAIReply() {
 
     // Check if we've hit the round limit
     if (roundsCompleted >= CONFIG.totalRounds) {
-      setTimeout(showCompletion, 1200);
+      showContinueButton();
     } else {
       setSendEnabled(true);
       document.getElementById("user-input").focus();
@@ -580,6 +582,17 @@ function showError(msg) {
   banner.textContent = msg;
   banner.style.display = "block";
   setTimeout(() => banner.style.display = "none", 6000);
+}
+
+function showContinueButton() {
+  // Add a continue button below the last message instead of auto-advancing
+  const messages = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.id = 'continue-wrap';
+  div.style.cssText = 'display:flex;justify-content:center;padding:16px 0 4px;';
+  div.innerHTML = '<button onclick="showCompletion()" style="background:#4a7c59;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-family:DM Sans,sans-serif;font-size:0.95rem;font-weight:500;cursor:pointer;">Continue to completion code →</button>';
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
 }
 
 function showCompletion() {
