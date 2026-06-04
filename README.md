@@ -7,11 +7,11 @@ step by step. No programming experience needed beyond copy-pasting.
 
 ## What you will end up with
 
-A web address like `https://your-study-name.netlify.app` that you can
+Your site is live at: `https://stirring-pudding-6c5283.netlify.app` that you can
 link to from Positly and formr. The URL will include a condition parameter:
 
-- Treatment group: `https://your-study-name.netlify.app?condition=treatment&pid=PARTICIPANT_ID`
-- Control group:   `https://your-study-name.netlify.app?condition=control&pid=PARTICIPANT_ID`
+- Condition A (food/animal products): `https://stirring-pudding-6c5283.netlify.app?condition=A&pid=PARTICIPANT_ID`
+- Condition B (firefighters/control): `https://stirring-pudding-6c5283.netlify.app?condition=B&pid=PARTICIPANT_ID`
 
 ---
 
@@ -78,7 +78,7 @@ makes them into a real website.
 4. On the next screen, leave all settings as they are and click **Deploy site**.
 
 5. Netlify will build your site in about 30 seconds. You will see a URL like
-   `https://random-words-12345.netlify.app`. You can rename this later under
+   `https://stirring-pudding-6c5283.netlify.app`. You can rename this later under
    Site settings → Change site name.
 
 ---
@@ -138,8 +138,8 @@ You need to tell the app where that is.
 
 Open these two URLs in your browser and check that both work:
 
-- Treatment: `https://your-site-name.netlify.app?condition=treatment&pid=test123`
-- Control:   `https://your-site-name.netlify.app?condition=control&pid=test123`
+- Condition A: `https://stirring-pudding-6c5283.netlify.app?condition=A&pid=test123`
+- Condition B: `https://stirring-pudding-6c5283.netlify.app?condition=B&pid=test123`
 
 You should see different intro texts and the AI should start with a different
 opening message. After 3 rounds, you should see the completion code screen.
@@ -163,7 +163,7 @@ Please click the link below to continue to the next part of the study.
 And this as a button or redirect URL (formr supports piping with `{{session_code}}`):
 
 ```
-https://your-site-name.netlify.app?condition=treatment&pid={{session_code}}
+https://stirring-pudding-6c5283.netlify.app?condition=A&pid={{session_code}}
 ```
 
 For randomisation between conditions, formr can assign condition in a hidden
@@ -173,7 +173,7 @@ variable and pipe it into the URL. Ask for help setting this up if needed.
 
 When setting up your Positly study, set the study URL to:
 ```
-https://your-site-name.netlify.app?condition=treatment&pid={{PROLIFIC_PID}}
+https://stirring-pudding-6c5283.netlify.app?condition=A&pid={{PROLIFIC_PID}}
 ```
 (Positly/Prolific uses `{{PROLIFIC_PID}}` for participant IDs.)
 
