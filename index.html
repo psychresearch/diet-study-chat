@@ -485,7 +485,7 @@ async function getAIReply() {
       body: JSON.stringify({
         condition: condition,
         history: conversationHistory,
-        systemPrompt: CONFIG.systemPrompts[condition]
+                systemPrompt: CONFIG.systemPrompts[condition] + "\n\n[Status: the participant has sent " + roundsCompleted + " of " + CONFIG.totalRounds + " messages. " + (roundsCompleted >= CONFIG.totalRounds ? "This is your FINAL reply." : "Continue the conversation.") + "]"
       })
     });
 
