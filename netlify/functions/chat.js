@@ -91,8 +91,11 @@ exports.handler = async function (event) {
           },
           contents,
           generationConfig: {
-            maxOutputTokens: 300
-          }
+  maxOutputTokens: 1000,
+  thinkingConfig: {
+    thinkingLevel: "LOW"
+  }
+}
         })
       }
     );
