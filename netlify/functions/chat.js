@@ -91,7 +91,7 @@ exports.handler = async function (event) {
           },
           contents,
           generationConfig: {
-  maxOutputTokens: 1000,
+  maxOutputTokens: 2000,
   thinkingConfig: {
     thinkingLevel: "LOW"
   }
