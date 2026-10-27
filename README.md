@@ -1,7 +1,7 @@
 # Diet Intervention Chat — Setup Guide
 
 This guide walks you through getting the chat app live on the internet,
-step by step. No programming experience needed beyond copy-pasting.
+step by step. 
 
 ---
 
